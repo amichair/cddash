@@ -21,6 +21,8 @@
 # "Private" functions and data
 
 # holds the directory history
+declare -i _CDD_LOG_SIZE=10
+
 _CDD_log=()
 
 _CDD_docd() {
@@ -31,7 +33,7 @@ _CDD_newdirpwd() {
 	[[ $PWD == ${_CDD_log[0]} ]] && return 
 
 	local -i i
-	for ((i=10-1; i>0; i--)); do
+	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
 		_CDD_log[i]=${_CDD_log[$i-1]}
 	done
 	_CDD_log[0]=$PWD
@@ -42,7 +44,7 @@ NC='\033[0m' # No Color
 
 _CDD_listlog() {
 	local -i i
-	for ((i=1; i<10; i++)); do
+	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
 		if [ "x${_CDD_log[$i]}" != "x" ]; then
 			builtin echo -e ${COMMANDCOLOR}cd-$i${NC} ${_CDD_log[$i]}
 		fi
@@ -65,20 +67,24 @@ export PROMPT_COMMAND=_CDD_newdirpwd;$PROMPT_COMMAND
 
 #####
 # Setup public function (i.e the used shell commands)
+
+# setup cd-?
 cd-?() { _CDD_listlog; }
-cd-0() { _CDD_docd 0; } # doesn't do anything. For completetion
-cd-1() { _CDD_docd 1; }
-cd-2() { _CDD_docd 2; }
-cd-3() { _CDD_docd 3; }
-cd-4() { _CDD_docd 4; }
-cd-5() { _CDD_docd 5; }
-cd-6() { _CDD_docd 6; }
-cd-7() { _CDD_docd 7; }
-cd-8() { _CDD_docd 8; }
-cd-9() { _CDD_docd 9; }
+
+# setup cd-{k} functions.
+_CDD_setup_funcs() {
+	# eval in this format: cd-3() { _CDD_docd 3; }
+	local -i i
+	for ((i=0; i<_CDD_LOG_SIZE; i++)); do
+		eval "cd-$i() { _CDD_docd $i; }"
+	done
+}
+
 
 
 ### Startup
 
+# setup 
+_CDD_setup_funcs;
 # start off with PWD
 _CDD_newdirpwd;
