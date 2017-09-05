@@ -79,6 +79,7 @@ _CDD_setup_funcs() {
 		eval "cd-$i() { _CDD_docd $i; }"
 	done
 }
+cd-() { cd -; }
 
 
 
