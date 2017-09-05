@@ -14,7 +14,6 @@
 
 ###
 #TODO
-# add color to cd-?
 # Create script for other shells / cross shell compatibilty
 
 
@@ -38,11 +37,14 @@ _CDD_newdirpwd() {
 	_CDD_log[0]=$PWD
 }
 
+COMMANDCOLOR='\033[1;36m'
+NC='\033[0m' # No Color
+
 _CDD_listlog() {
 	local -i i
 	for ((i=1; i<10; i++)); do
 		if [ "x${_CDD_log[$i]}" != "x" ]; then
-			echo cd-$i : ${_CDD_log[$i]}
+			builtin echo -e ${COMMANDCOLOR}cd-$i${NC} ${_CDD_log[$i]}
 		fi
 	done
 }
