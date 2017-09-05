@@ -1,16 +1,21 @@
 # cddash ver 0.1
-# adds a running history of last visited dirs.
-# allows quick navigation
+#
+# Maintains a running history of last 10 visited dirs and allows quick naviation.
+# Adds the following commands:
 # cd-? shows list
-# cd-1 goes to last dir (just like "cd -")
-# cd-2 goes two back etc.
+# cd-1 cd to last dir (just like "cd -")
+# cd-2 cd to 2nd to last dir 
+# cd-9 cd to 9th to last dir
 
+# To install, add the following line to your .bashrc
+# source cddash.sh
 
+#####################################################
+
+###
 #TODO
-# obfuscate globals 
 # add color to cd-?
-# cross shell compatibilty
-# find best hook
+# Create script for other shells / cross shell compatibilty
 
 
 ### 
