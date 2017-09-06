@@ -6,29 +6,30 @@
 # cd-1 cd to last dir (just like "cd -")
 # cd-2 cd to 2nd to last dir 
 # cd-9 cd to 9th to last dir
-
+#
 # To install, add the following line to your .bashrc
 # source cddash.sh
-
+#
 #####################################################
 
 ###
-#TODO
-# Create script for other shells / cross shell compatibilty
-
-
+# Configuration
+#
+declare -i _CDD_LOG_SIZE=10 # Size of the directory history
+declare _CDD_LISTLOG_COMMAND_COLOR='\033[1;36m' # In "cd-?", the color of the command part. Currently Cyan
 ### 
 # "Private" functions and data
+#
 
-# holds the directory history
-declare -i _CDD_LOG_SIZE=10
-
+# the history
 _CDD_log=()
 
+# do the actual cd
 _CDD_docd() {
 	cd "${_CDD_log[$1]}";
 }
 
+# process a potential new directory in $PWD
 _CDD_newdirpwd() {
 	[[ $PWD == ${_CDD_log[0]} ]] && return 
 
@@ -39,14 +40,13 @@ _CDD_newdirpwd() {
 	_CDD_log[0]=$PWD
 }
 
-COMMANDCOLOR='\033[1;36m'
-NC='\033[0m' # No Color
+declare NC='\033[0m' # No Color
 
 _CDD_listlog() {
 	local -i i
 	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
 		if [ "x${_CDD_log[$i]}" != "x" ]; then
-			builtin echo -e ${COMMANDCOLOR}cd-$i${NC} ${_CDD_log[$i]}
+			builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-$i${NC} ${_CDD_log[$i]}
 		fi
 	done
 }
