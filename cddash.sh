@@ -17,12 +17,13 @@
 #
 declare -i _CDD_LOG_SIZE=10 # Size of the directory history
 declare _CDD_LISTLOG_COMMAND_COLOR='\033[1;36m' # In "cd-?", the color of the command part. Currently Cyan
+
 ### 
 # "Private" functions and data
 #
 
 # the history
-_CDD_log=()
+declare -a _CDD_log=()
 
 # do the actual cd
 _CDD_docd() {
@@ -51,6 +52,52 @@ _CDD_listlog() {
 	done
 }
 
+# setup cd-{k} functions.
+_CDD_setup_funcs() {
+	# eval in this format: cd-3() { _CDD_docd 3; }
+	local -i i
+	for ((i=0; i<_CDD_LOG_SIZE; i++)); do
+		eval "cd-$i() { _CDD_docd $i; }"
+	done
+}
+
+###
+# Directory iteration in a readline function
+
+declare -i _CDD_iterate_index=0
+
+_CDD_iterate_readline() {
+	if [ ${#READLINE_LINE} != 0 ] && [ "${READLINE_LINE:0:2}" != "cd" ]; then
+		return 0
+	fi
+	
+	_CDD_iterate_index=$(( (_CDD_iterate_index+1) % _CDD_LOG_SIZE))
+	local dir=${_CDD_log[_CDD_iterate_index]}
+	if [ ${#dir} == 0 ]; then
+		_CDD_iterate_index=0
+	fi
+	
+	dir2=$(printf '%q' "$dir")
+	if (( ${#dir2} > ${#dir} )); then
+		dir="\"${dir}\""
+	fi
+
+	READLINE_LINE="cd ${dir}"
+	
+	if (( _CDD_iterate_index == 0 )); then
+		READLINE_LINE=""
+	fi
+	
+	READLINE_POINT=${#READLINE_LINE}
+}
+
+
+_CDD_on_prompt() {
+	_CDD_iterate_index=0
+	_CDD_newdirpwd
+}
+
+
 #####
 # Setup the hook (i.e how the shell notifys the code that a new dir has been reached)
 # there several options:
@@ -61,31 +108,18 @@ _CDD_listlog() {
 
 # can hook the prompt.
 # pros: captures any change in dir. con (or feature): if many cds happen in the same command, they won't be _CDD_logged. (example: cd aaa; cd bbb; cd-2;) also runs every prompt
-export PROMPT_COMMAND=_CDD_newdirpwd;$PROMPT_COMMAND
+export PROMPT_COMMAND=_CDD_on_prompt;$PROMPT_COMMAND
 
 # in TCSH there is cwdcmd. in zch there is cmpwd()
 
 #####
-# Setup public function (i.e the used shell commands)
+# Setup public function (i.e the actual shell commands)
 
-# setup cd-?
-cd-?() { _CDD_listlog; }
+cd-?() { _CDD_listlog; } # setup cd-?
+cd-() { cd -; }          # setup cd- as a shortcut for "cd -"
+_CDD_setup_funcs;        # setup all of cd-K
 
-# setup cd-{k} functions.
-_CDD_setup_funcs() {
-	# eval in this format: cd-3() { _CDD_docd 3; }
-	local -i i
-	for ((i=0; i<_CDD_LOG_SIZE; i++)); do
-		eval "cd-$i() { _CDD_docd $i; }"
-	done
-}
-cd-() { cd -; }
+bind -x '"\e[24~":_CDD_iterate_readline' # bind key to history iteration
 
-
-
-### Startup
-
-# setup 
-_CDD_setup_funcs;
-# start off with PWD
+# start history log with PWD
 _CDD_newdirpwd;
