@@ -1,6 +1,6 @@
 # cddash ver 0.1
 #
-# Maintains a running history of last 10 visited dirs and allows quick naviation.
+# Maintains a running history of last 10 visited dirs and allows quick navigation.
 # Adds the following commands:
 # cd-? shows list
 # cd-1 cd to last dir (just like "cd -")
@@ -64,37 +64,46 @@ _CDD_setup_funcs() {
 ###
 # Directory iteration in a readline function
 
+# the current iteration index
 declare -i _CDD_iterate_index=0
 
+# Iterate function. Set READLINE to the next directory with a "cd " prefix.
+# Output a blank line after a whole loop before starting over
 _CDD_iterate_readline() {
+	# only run if current line is empty or starts with "cd"
 	if [ ${#READLINE_LINE} != 0 ] && [ "${READLINE_LINE:0:2}" != "cd" ]; then
 		return 0
 	fi
 	
+	# get next entry, looping from the end back to the start
 	_CDD_iterate_index=$(( (_CDD_iterate_index+1) % _CDD_LOG_SIZE))
 	local dir=${_CDD_log[_CDD_iterate_index]}
 	if [ ${#dir} == 0 ]; then
 		_CDD_iterate_index=0
 	fi
 	
-	dir2=$(printf '%q' "$dir")
-	if (( ${#dir2} > ${#dir} )); then
+	# add quotes to the directory only if needed. Check if there are any escaped charecters
+	dire=$(printf '%q' "$dir")
+	if (( ${#dire} > ${#dir} )); then
 		dir="\"${dir}\""
 	fi
 
+	# set READLINE
 	READLINE_LINE="cd ${dir}"
 	
+	# if we are starting a new loop, output a blank line
 	if (( _CDD_iterate_index == 0 )); then
 		READLINE_LINE=""
 	fi
-	
+
+	# set cursor to the end
 	READLINE_POINT=${#READLINE_LINE}
 }
 
-
+# event handler for each prompt
 _CDD_on_prompt() {
-	_CDD_iterate_index=0
-	_CDD_newdirpwd
+	_CDD_iterate_index=0 # reset the iterator index
+	_CDD_newdirpwd       # add current dir if new
 }
 
 
