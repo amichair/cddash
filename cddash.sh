@@ -34,7 +34,6 @@ _CDD_docd() {
 _CDD_newdirpwd() {
 	[[ $PWD == ${_CDD_log[0]} ]] && return 
 
-	local -i i
 	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
 		_CDD_log[i]=${_CDD_log[$i-1]}
 	done
@@ -44,18 +43,14 @@ _CDD_newdirpwd() {
 declare NC='\033[0m' # No Color
 
 _CDD_listlog() {
-	local -i i
 	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
-		if [ "x${_CDD_log[$i]}" != "x" ]; then
-			builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-$i${NC} ${_CDD_log[$i]}
-		fi
+		[[ ! -z "${_CDD_log[$i]}" ]] && builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-$i${NC} ${_CDD_log[$i]}
 	done
 }
 
 # setup cd-{k} functions.
 _CDD_setup_funcs() {
 	# eval in this format: cd-3() { _CDD_docd 3; }
-	local -i i
 	for ((i=0; i<_CDD_LOG_SIZE; i++)); do
 		eval "cd-$i() { _CDD_docd $i; }"
 	done
@@ -70,31 +65,23 @@ declare -i _CDD_iterate_index=0
 # Iterate function. Set READLINE to the next directory with a "cd " prefix.
 # Output a blank line after a whole loop before starting over
 _CDD_iterate_readline() {
-	# only run if current line is empty or starts with "cd"
-	if [ ${#READLINE_LINE} != 0 ] && [ "${READLINE_LINE:0:2}" != "cd" ]; then
-		return 0
-	fi
+	# only run if current line is empty or starts with "cd "
+	[[ ! -z "$READLINE_LINE" && "${READLINE_LINE:0:3}" != "cd " ]] && return
 	
 	# get next entry, looping from the end back to the start
 	_CDD_iterate_index=$(( (_CDD_iterate_index+1) % _CDD_LOG_SIZE))
-	local dir=${_CDD_log[_CDD_iterate_index]}
-	if [ ${#dir} == 0 ]; then
-		_CDD_iterate_index=0
-	fi
+	local dir=${_CDD_log[_CDD_iterate_index]} # get dir
+	[[ ${#dir} == 0 ]] && _CDD_iterate_index=0 # if we reached a non inited entry, loop back
 	
 	# add quotes to the directory only if needed. Check if there are any escaped charecters
 	dire=$(printf '%q' "$dir")
-	if (( ${#dire} > ${#dir} )); then
-		dir="\"${dir}\""
-	fi
+	(( ${#dire} > ${#dir} )) &&	dir="\"${dir}\""
 
 	# set READLINE
 	READLINE_LINE="cd ${dir}"
 	
-	# if we are starting a new loop, output a blank line
-	if (( _CDD_iterate_index == 0 )); then
-		READLINE_LINE=""
-	fi
+	# if we are starting a new loop, output a blank line instead
+	(( _CDD_iterate_index == 0 )) && READLINE_LINE=""
 
 	# set cursor to the end
 	READLINE_POINT=${#READLINE_LINE}
