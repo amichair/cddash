@@ -22,20 +22,35 @@ declare _CDD_LISTLOG_COMMAND_COLOR='\033[1;36m' # In "cd-?", the color of the co
 # "Private" functions and data
 #
 
-# the history
-declare -a _CDD_log=()
+# initialize
+_CDD_initialize() {
+	# start the global array empty
+	declare -g -a _CDD_log=()
+	
+	# remove any prevoiously decleared accessor functions
+	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
+		unset -f "cd-$i"
+	done
 
-# do the actual cd
+	# start stack with currert dir
+	_CDD_newdirpwd;
+}
+
+# perform the actual cd
 _CDD_docd() {
-	cd "${_CDD_log[$1]}";
+	builtin cd "${_CDD_log[$1]}";
 }
 
 # process a potential new directory in $PWD
 _CDD_newdirpwd() {
+	# if it's not a new dir, nothing to do
 	[[ $PWD == ${_CDD_log[0]} ]] && return 
 
+	# perform an unshift to the array
 	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
 		_CDD_log[i]=${_CDD_log[$i-1]}
+		# if the log index points to a value, setup the accessor function
+		[[ ! -z "${_CDD_log[$i]}" ]] && eval "cd-$i() { _CDD_docd $i; }"
 	done
 	_CDD_log[0]=$PWD
 }
@@ -45,14 +60,6 @@ declare NC='\033[0m' # No Color
 _CDD_listlog() {
 	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
 		[[ ! -z "${_CDD_log[$i]}" ]] && builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-$i${NC} ${_CDD_log[$i]}
-	done
-}
-
-# setup cd-{k} functions.
-_CDD_setup_funcs() {
-	# eval in this format: cd-3() { _CDD_docd 3; }
-	for ((i=0; i<_CDD_LOG_SIZE; i++)); do
-		eval "cd-$i() { _CDD_docd $i; }"
 	done
 }
 
@@ -112,9 +119,9 @@ export PROMPT_COMMAND=_CDD_on_prompt;$PROMPT_COMMAND
 # Setup public function (i.e the actual shell commands)
 
 cd-() { _CDD_listlog; } # setup cd-
-_CDD_setup_funcs;        # setup all of cd-K
+cd-clear() { _CDD_initialize; }
 
 bind -x '"\e[24~":_CDD_iterate_readline' # bind key to history iteration
 
 # start history log with PWD
-_CDD_newdirpwd;
+_CDD_initialize;
