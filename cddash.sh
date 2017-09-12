@@ -111,8 +111,7 @@ export PROMPT_COMMAND=_CDD_on_prompt;$PROMPT_COMMAND
 #####
 # Setup public function (i.e the actual shell commands)
 
-cd-?() { _CDD_listlog; } # setup cd-?
-cd-() { cd -; }          # setup cd- as a shortcut for "cd -"
+cd-() { _CDD_listlog; } # setup cd-
 _CDD_setup_funcs;        # setup all of cd-K
 
 bind -x '"\e[24~":_CDD_iterate_readline' # bind key to history iteration
