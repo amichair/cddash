@@ -101,6 +101,23 @@ _CDD_on_prompt() {
 }
 
 
+_CDD_main() {
+	if [[ $1 == "clear"  ]]; then
+		_CDD_initialize
+	else
+		if [[ $1 == "resize" ]]; then
+			if [[ -z $2 ]]; then
+				echo "usage: cd- resize <size_of_log>"
+			else
+				_CDD_LOG_SIZE=$2	
+			fi
+				
+		else
+			_CDD_listlog
+		fi
+	fi
+}
+
 #####
 # Setup the hook (i.e how the shell notifys the code that a new dir has been reached)
 # there several options:
@@ -118,9 +135,9 @@ export PROMPT_COMMAND=_CDD_on_prompt;$PROMPT_COMMAND
 #####
 # Setup public function (i.e the actual shell commands)
 
-cd-() { _CDD_listlog; } # setup cd-
-cd-clear() { _CDD_initialize; }
+cd-() { _CDD_main $@; } # setup cd-
 
+complete -W "clear resize" "cd-"
 bind -x '"\e[24~":_CDD_iterate_readline' # bind key to history iteration
 
 # start history log with PWD
