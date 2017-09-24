@@ -53,7 +53,7 @@ _CDD_newdirpwd() {
 
 	# find duplicate entries to current dir
 	declare dup
-	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
+	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
 		[[ $PWD == "${_CDD_log[$i]}" ]] && dup=$i
 	done
 	# remove dups
@@ -61,7 +61,7 @@ _CDD_newdirpwd() {
 		
 	
 	# setup accessor commands for defined values
-	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
+	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
 		[[ ! -z "${_CDD_log[$i]}" ]] && eval "cd-$i() { _CDD_docd $i; }"
 	done
 }
