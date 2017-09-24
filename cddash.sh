@@ -18,6 +18,8 @@
 declare -i _CDD_LOG_SIZE=10 # Size of the directory history
 declare _CDD_LISTLOG_COMMAND_COLOR='\033[1;36m' # In "cd-?", the color of the command part. Currently Cyan
 
+declare REMOVE_DUPLICATES=true #comment out to have duplicates
+
 ### 
 # "Private" functions and data
 #
@@ -49,7 +51,16 @@ _CDD_newdirpwd() {
 	# perform an unshift to the array
 	_CDD_log=("${PWD}" "${_CDD_log[@]}")
 
-	# if the log index points to a value, setup the accessor function
+	# find duplicate entries to current dir
+	declare dup
+	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
+		[[ $PWD == "${_CDD_log[$i]}" ]] && dup=$i
+	done
+	# remove dups
+	[[ ${REMOVE_DUPLICATES} ]] && [[ ! -z ${dup} ]] && _CDD_log=(${_CDD_log[@]:0:$dup} ${_CDD_log[@]:$(($dup + 1))})
+		
+	
+	# setup accessor commands for defined values
 	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
 		[[ ! -z "${_CDD_log[$i]}" ]] && eval "cd-$i() { _CDD_docd $i; }"
 	done
