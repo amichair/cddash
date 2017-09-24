@@ -47,12 +47,12 @@ _CDD_newdirpwd() {
 	[[ $PWD == ${_CDD_log[0]} ]] && return 
 
 	# perform an unshift to the array
+	_CDD_log=("${PWD}" "${_CDD_log[@]}")
+
+	# if the log index points to a value, setup the accessor function
 	for ((i=_CDD_LOG_SIZE-1; i>0; i--)); do
-		_CDD_log[i]=${_CDD_log[$i-1]}
-		# if the log index points to a value, setup the accessor function
 		[[ ! -z "${_CDD_log[$i]}" ]] && eval "cd-$i() { _CDD_docd $i; }"
 	done
-	_CDD_log[0]=$PWD
 }
 
 declare NC='\033[0m' # No Color
