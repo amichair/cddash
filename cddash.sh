@@ -94,8 +94,12 @@ _CDD_iterate_readline() {
 		_CDD_rl_suffix="${READLINE_LINE:READLINE_POINT}"
 	fi
 	
+	# direction of iteration. default is forward. If func has a parameter, its backward
+	declare step=1
+	[[ ! -z $1 ]] && step=-1
+	
 	# get next entry, looping from the end back to the start
-	_CDD_iterate_index=$(( (_CDD_iterate_index+1) % logsize))
+	_CDD_iterate_index=$(( (_CDD_iterate_index+step) % logsize))
 	# get dir string
 	local dir=${_CDD_log[_CDD_iterate_index]}	
 	# add quotes to the directory only if needed. Check if there are any escaped charecters
@@ -111,6 +115,13 @@ _CDD_iterate_readline() {
 	# set cursor to just after the dir
 	READLINE_POINT=$(( ${#_CDD_rl_prefix} + ${#dir} ))
 }
+
+# iterate backwards
+_CDD_iterate_readline_back() {
+	_CDD_iterate_readline BACKWARD
+}
+
+
 
 # event handler for each prompt
 _CDD_on_prompt() {
@@ -157,6 +168,7 @@ cd-() { _CDD_main $@; } # setup cd-
 
 complete -W "clear resize" "cd-"
 bind -x '"\e[24~":_CDD_iterate_readline' # bind key to history iteration
+bind -x '"\e[24;2~":_CDD_iterate_readline_back' # bind key to history iteration
 
 # start history log with PWD
 _CDD_initialize;
