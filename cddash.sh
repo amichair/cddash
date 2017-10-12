@@ -83,22 +83,41 @@ declare -i _CDD_iterate_index=0
 # Modify READLINE. Expand "cd-" pointed to by cursor to first dir in list.
 # Subsequent invocation iterate dir
 _CDD_iterate_readline() {
-	declare logsize=${#_CDD_log[@]}	
-
-	# if first run, only accept if cursor is pointing to "cd-"
-	if ((_CDD_iterate_index == 0 ))
-	then
-		[[ "${READLINE_LINE:READLINE_POINT-3:3}" != "cd-" ]] && return
-		#store prefix and suffix for later invocations
-		_CDD_rl_prefix="${READLINE_LINE:0:READLINE_POINT-3}"
-		_CDD_rl_suffix="${READLINE_LINE:READLINE_POINT}"
-	fi
-	
 	# direction of iteration. default is forward. If func has a parameter, its backward
 	declare step=1
 	[[ ! -z $1 ]] && step=-1
+	declare token_start=-1
+	
+	# if first run, only accept if cursor is pointing to "cd-"
+	if ((_CDD_iterate_index == 0 ))
+	then
+		if [[ "${READLINE_LINE:READLINE_POINT-3:3}" == "cd-" ]]
+		then
+			token_start=$((READLINE_POINT-3))
+		fi
+		if [[ "${READLINE_LINE:READLINE_POINT-4:4}" =~ cd-[0-9] ]]
+		then
+			token_start=$((READLINE_POINT-4))
+			_CDD_iterate_index=${READLINE_LINE:READLINE_POINT-1:1}
+			_CDD_iterate_index=$((_CDD_iterate_index-step))
+
+		fi
+		if [[ "${READLINE_LINE:READLINE_POINT-5:5}" =~ cd-[0-9]{2} ]]
+		then
+			token_start=$((READLINE_POINT-5))
+			_CDD_iterate_index=${READLINE_LINE:READLINE_POINT-2:2}
+			_CDD_iterate_index=$((_CDD_iterate_index-step))
+		fi
+		
+		(( token_start<0 )) && return;
+		
+		#store prefix and suffix for later invocations
+		_CDD_rl_prefix="${READLINE_LINE:0:token_start}"
+		_CDD_rl_suffix="${READLINE_LINE:READLINE_POINT}"
+	fi	
 	
 	# get next entry, looping from the end back to the start
+	declare logsize=${#_CDD_log[@]}		
 	_CDD_iterate_index=$(( (_CDD_iterate_index+step) % logsize))
 	# get dir string
 	local dir=${_CDD_log[_CDD_iterate_index]}	
