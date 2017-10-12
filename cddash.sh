@@ -80,29 +80,36 @@ _CDD_listlog() {
 # the current iteration index
 declare -i _CDD_iterate_index=0
 
-# Iterate function. Set READLINE to the next directory with a "cd " prefix.
-# Output a blank line after a whole loop before starting over
+# Modify READLINE. Expand "cd-" pointed to by cursor to first dir in list.
+# Subsequent invocation iterate dir
 _CDD_iterate_readline() {
-	# only run if current line is empty or starts with "cd "
-	[[ ! -z "$READLINE_LINE" && "${READLINE_LINE:0:3}" != "cd " ]] && return
+	declare logsize=${#_CDD_log[@]}	
+
+	# if first run, only accept if cursor is pointing to "cd-"
+	if ((_CDD_iterate_index == 0 ))
+	then
+		[[ "${READLINE_LINE:READLINE_POINT-3:3}" != "cd-" ]] && return
+		#store prefix and suffix for later invocations
+		_CDD_rl_prefix="${READLINE_LINE:0:READLINE_POINT-3}"
+		_CDD_rl_suffix="${READLINE_LINE:READLINE_POINT}"
+	fi
 	
 	# get next entry, looping from the end back to the start
-	_CDD_iterate_index=$(( (_CDD_iterate_index+1) % _CDD_LOG_SIZE))
-	local dir=${_CDD_log[_CDD_iterate_index]} # get dir
-	[[ ${#dir} == 0 ]] && _CDD_iterate_index=0 # if we reached a non inited entry, loop back
-	
+	_CDD_iterate_index=$(( (_CDD_iterate_index+1) % logsize))
+	# get dir string
+	local dir=${_CDD_log[_CDD_iterate_index]}	
 	# add quotes to the directory only if needed. Check if there are any escaped charecters
 	dire=$(printf '%q' "$dir")
 	(( ${#dire} > ${#dir} )) &&	dir="\"${dir}\""
 
-	# set READLINE
-	READLINE_LINE="cd ${dir}"
-	
-	# if we are starting a new loop, output a blank line instead
-	(( _CDD_iterate_index == 0 )) && READLINE_LINE=""
+	# if we have finished and are starting a new loop, output a blank dir instead
+	(( _CDD_iterate_index == 0 )) && dir=""
 
-	# set cursor to the end
-	READLINE_POINT=${#READLINE_LINE}
+	# set READLINE to contain the directory
+	READLINE_LINE="${_CDD_rl_prefix}${dir}${_CDD_rl_suffix}"
+	
+	# set cursor to just after the dir
+	READLINE_POINT=$(( ${#_CDD_rl_prefix} + ${#dir} ))
 }
 
 # event handler for each prompt
