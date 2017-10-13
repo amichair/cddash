@@ -111,9 +111,10 @@ _CDD_iterate_readline() {
 		
 		(( token_start<0 )) && return;
 		
-		#store prefix and suffix for later invocations
+		#store prefix and suffix for later invocations. store original token for when we finish log
 		_CDD_rl_prefix="${READLINE_LINE:0:token_start}"
 		_CDD_rl_suffix="${READLINE_LINE:READLINE_POINT}"
+		_CDD_rl_original="${READLINE_LINE:token_start:READLINE_POINT-token_start}"
 	fi	
 	
 	# get next entry, looping from the end back to the start
@@ -125,8 +126,8 @@ _CDD_iterate_readline() {
 	dire=$(printf '%q' "$dir")
 	(( ${#dire} > ${#dir} )) &&	dir="\"${dir}\""
 
-	# if we have finished and are starting a new loop, output a blank dir instead
-	(( _CDD_iterate_index == 0 )) && dir=""
+	# if we have finished and are starting a new loop, return the original token
+	(( _CDD_iterate_index == 0 )) && dir=${_CDD_rl_original}
 
 	# set READLINE to contain the directory
 	READLINE_LINE="${_CDD_rl_prefix}${dir}${_CDD_rl_suffix}"
