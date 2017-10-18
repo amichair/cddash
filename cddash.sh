@@ -86,11 +86,15 @@ _CDD_iterate_readline() {
 	# direction of iteration. default is forward. If func has a parameter, its backward
 	declare step=1
 	[[ ! -z $1 ]] && step=-1
-	declare token_start=-1
 	
+	declare token_start=-1
 	# if first run, only accept if cursor is pointing to "cd-"
 	if ((_CDD_iterate_index == 0 ))
 	then
+		if [[ "${READLINE_LINE}" == "" ]]
+		then
+			token_start=0
+		fi
 		if [[ "${READLINE_LINE:READLINE_POINT-3:3}" == "cd-" ]]
 		then
 			token_start=$((READLINE_POINT-3))
@@ -100,7 +104,6 @@ _CDD_iterate_readline() {
 			token_start=$((READLINE_POINT-4))
 			_CDD_iterate_index=${READLINE_LINE:READLINE_POINT-1:1}
 			_CDD_iterate_index=$((_CDD_iterate_index-step))
-
 		fi
 		if [[ "${READLINE_LINE:READLINE_POINT-5:5}" =~ cd-[0-9]{2} ]]
 		then
@@ -127,13 +130,20 @@ _CDD_iterate_readline() {
 	(( ${#dire} > ${#dir} )) &&	dir="\"${dir}\""
 
 	# if we have finished and are starting a new loop, return the original token
-	(( _CDD_iterate_index == 0 )) && dir=${_CDD_rl_original}
+	(( _CDD_iterate_index == 0 )) && dir=${_CDD_rl_original} 
 
 	# set READLINE to contain the directory
-	READLINE_LINE="${_CDD_rl_prefix}${dir}${_CDD_rl_suffix}"
+	READLINE_LINE="${_CDD_rl_prefix}${dir}"
+
+	# if we started on a blank line, and this is an expantion, prefix with "cd "
+	(( _CDD_iterate_index > 0 )) && (( ${#_CDD_rl_original} == 0 )) && READLINE_LINE="cd ${READLINE_LINE}"
 	
 	# set cursor to just after the dir
-	READLINE_POINT=$(( ${#_CDD_rl_prefix} + ${#dir} ))
+	READLINE_POINT=${#READLINE_LINE}
+
+	# add suffix
+	READLINE_LINE="${READLINE_LINE}${_CDD_rl_suffix}"
+
 }
 
 # iterate backwards
