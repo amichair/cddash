@@ -1,11 +1,17 @@
-# cddash ver 0.1
+# cddash ver 0.8
 #
-# Maintains a running history of last 10 visited dirs and allows quick navigation.
-# Adds the following commands:
-# cd-? shows list
-# cd-1 cd to last dir (just like "cd -")
-# cd-2 cd to 2nd to last dir 
-# cd-9 cd to 9th to last dir
+# Maintains a running history of last visited directories and allows quick navigation and in-line completion.
+# Adds the following commands to the shell:
+# cd-    : Shows list of directories seen
+# cd-{K} : cd to Kth last dir (for example cd-3, cd-7 etc)
+#
+# A hotkey is defined (default is F12)
+# Pressing the hotkey when the cursor is immediataly after "cd-" or "cd-{K}" expands the token to the 1st (or Kth) directory in the list. Subsuquent presses iterate forward.
+# 
+# Also defined:
+# cd- clear : clears the log
+# cd- resize {N} : resets the log history to size {N}
+# A reservse-iteration hotkey: Default is Shift+F12
 #
 # To install, add the following line to your .bashrc
 # source cddash.sh
@@ -15,10 +21,13 @@
 ###
 # Configuration
 #
-declare -i _CDD_LOG_SIZE=10 # Size of the directory history
-declare _CDD_LISTLOG_COMMAND_COLOR='\033[1;36m' # In "cd-?", the color of the command part. Currently Cyan
+declare -i _CDD_LOG_SIZE=10 # Default size of the directory history
+declare _CDD_LISTLOG_COMMAND_COLOR='\033[1;36m' # The color of the command part in "cd-". Currently Cyan
+declare _CDD_HOT_KEY="\e[24~" # default is F12
+declare _CDD_HOT_KEY_REVERSE="\e[24;2~" # default is shift-F12
 
-declare REMOVE_DUPLICATES=true #comment out to have duplicates
+#declare REMOVE_DUPLICATES=true #Define this to remove duplicates from the log 
+
 
 ### 
 # "Private" functions and data
@@ -196,9 +205,12 @@ export PROMPT_COMMAND=_CDD_on_prompt;$PROMPT_COMMAND
 
 cd-() { _CDD_main $@; } # setup cd-
 
+# setup tab completion for commands
 complete -W "clear resize" "cd-"
-bind -x '"\e[24~":_CDD_iterate_readline' # bind key to history iteration
-bind -x '"\e[24;2~":_CDD_iterate_readline_back' # bind key to history iteration
+
+# bind hotkeys
+bind -x '"'${_CDD_HOT_KEY}'":_CDD_iterate_readline' # bind key to history iteration
+bind -x '"'${_CDD_HOT_KEY_REVERSE}'":_CDD_iterate_readline_back' # bind key to history iteration
 
 # start history log with PWD
 _CDD_initialize;
