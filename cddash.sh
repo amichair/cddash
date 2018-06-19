@@ -26,7 +26,7 @@ declare _CDD_LISTLOG_COMMAND_COLOR='\033[1;36m' # The color of the command part 
 declare _CDD_HOT_KEY="\e[24~" # default is F12
 declare _CDD_HOT_KEY_REVERSE="\e[24;2~" # default is shift-F12
 
-#declare REMOVE_DUPLICATES=true #Define this to remove duplicates from the log 
+declare REMOVE_DUPLICATES=true #Define this to remove duplicates from the log 
 
 
 ### 
