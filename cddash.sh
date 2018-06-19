@@ -78,6 +78,10 @@ _CDD_newdirpwd() {
 declare NC='\033[0m' # No Color
 
 _CDD_listlog() {
+        for ((i=0; i<${#_CDD_aliases[@]}; i+=2)); do
+                builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-${_CDD_aliases[$i]}${NC} ${_CDD_aliases[$i+1]}
+        done
+
 	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
 		[[ ! -z "${_CDD_log[$i]}" ]] && builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-$i${NC} ${_CDD_log[$i]}
 	done
@@ -173,11 +177,12 @@ _CDD_main() {
 	if [[ $1 == "clear"  ]]; then
 		_CDD_initialize
 	else
-		if [[ $1 == "resize" ]]; then
+		if [[ $1 == "alias" ]]; then
 			if [[ -z $2 ]]; then
-				echo "usage: cd- resize <size_of_log>"
+				echo "usage: cd- alias <name_for_current_directory>"
 			else
-				_CDD_LOG_SIZE=$2	
+				_CDD_aliases=("${_CDD_aliases[@]}" $2 $PWD)
+				eval "cd-$2() { cd \"$PWD\"; }"
 			fi
 				
 		else
@@ -206,7 +211,7 @@ export PROMPT_COMMAND=_CDD_on_prompt;$PROMPT_COMMAND
 cd-() { _CDD_main $@; } # setup cd-
 
 # setup tab completion for commands
-complete -W "clear resize" "cd-"
+complete -W "clear alias" "cd-"
 
 # bind hotkeys
 bind -x '"'${_CDD_HOT_KEY}'":_CDD_iterate_readline' # bind key to history iteration
