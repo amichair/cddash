@@ -47,9 +47,20 @@ _CDD_initialize() {
 	_CDD_newdirpwd;
 }
 
-# perform the actual cd
+#translate a cddash token (number or alias) to directory
+_CDD_translate() {
+        _CDD_TRANSLATE_DIR='';
+        for ((i=0; i<${#_CDD_aliases[@]}; i+=2)); do
+	      [[ ${_CDD_aliases[$i]} == $1 ]] && _CDD_TRANSLATE_DIR=${_CDD_aliases[$i+1]}
+        done
+
+	[[ $_CDD_TRANSLATE_DIR == '' ]] && [[ $1 =~ [0-9]+ ]] && _CDD_TRANSLATE_DIR=${_CDD_log[$1]};
+}
+
+# perform a cd to the cddash token (number or alias)
 _CDD_docd() {
-	builtin cd "${_CDD_log[$1]}";
+	_CDD_translate $1;
+	[[ $_CDD_TRANSLATE_DIR != '' ]] && builtin cd $_CDD_TRANSLATE_DIR;
 }
 
 # process a potential new directory in $PWD
@@ -82,6 +93,7 @@ _CDD_listlog() {
                 builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-${_CDD_aliases[$i]}${NC} ${_CDD_aliases[$i+1]}
         done
 
+	# starts from 1 because cd-0 is the current directory.
 	for ((i=1; i<_CDD_LOG_SIZE; i++)); do
 		[[ ! -z "${_CDD_log[$i]}" ]] && builtin echo -e ${_CDD_LISTLOG_COMMAND_COLOR}cd-$i${NC} ${_CDD_log[$i]}
 	done
@@ -191,6 +203,19 @@ _CDD_main() {
 	fi
 }
 
+function _CDD_complete_()
+{
+    local word=${COMP_WORDS[COMP_CWORD]}
+
+    if [[ $word =~ cd-.* ]]; then
+        _CDD_translate ${word:3};
+        [[ $_CDD_TRANSLATE_DIR != '' ]] && COMPREPLY=$_CDD_TRANSLATE_DIR;
+    fi
+
+#    COMPREPLY=($(compgen -f -X "$xpat" -- "${word}"))
+}
+
+
 #####
 # Setup the hook (i.e how the shell notifys the code that a new dir has been reached)
 # there several options:
@@ -212,10 +237,13 @@ cd-() { _CDD_main $@; } # setup cd-
 
 # setup tab completion for commands
 complete -W "clear alias" "cd-"
+# setup tab completion that translates cddash tokens on the fly
+complete -D -F _CDD_complete_ -o default
 
 # bind hotkeys
 bind -x '"'${_CDD_HOT_KEY}'":_CDD_iterate_readline' # bind key to history iteration
 bind -x '"'${_CDD_HOT_KEY_REVERSE}'":_CDD_iterate_readline_back' # bind key to history iteration
+
 
 # start history log with PWD
 _CDD_initialize;
