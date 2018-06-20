@@ -57,6 +57,16 @@ _CDD_translate() {
 	[[ $_CDD_TRANSLATE_DIR == '' ]] && [[ $1 =~ [0-9]+ ]] && _CDD_TRANSLATE_DIR=${_CDD_log[$1]};
 }
 
+_CDD_unalias() {
+        # find index of alias
+        declare ind
+        for ((i=0; i<${#_CDD_aliases[@]}; i+=2)); do
+                [[ $1 == ${_CDD_aliases[$i]} ]] && ind=$i
+        done
+        # remove alias if found
+        [[ ! -z ${ind} ]] && _CDD_aliases=(${_CDD_aliases[@]:0:$ind} ${_CDD_aliases[@]:$(($ind + 2))})
+}
+
 # perform a cd to the cddash token (number or alias)
 _CDD_docd() {
 	_CDD_translate $1;
@@ -186,21 +196,29 @@ _CDD_on_prompt() {
 
 
 _CDD_main() {
-	if [[ $1 == "clear"  ]]; then
+	case $1 in
+	"clear")
 		_CDD_initialize
-	else
-		if [[ $1 == "alias" ]]; then
-			if [[ -z $2 ]]; then
-				echo "usage: cd- alias <name_for_current_directory>"
-			else
-				_CDD_aliases=("${_CDD_aliases[@]}" $2 $PWD)
-				eval "cd-$2() { cd \"$PWD\"; }"
-			fi
-				
+		;;
+        "alias")
+		if [[ -z $2 ]]; then
+			echo "Usage: cd- alias <name_for_current_directory>"
 		else
-			_CDD_listlog
+			_CDD_aliases=("${_CDD_aliases[@]}" $2 $PWD)
+			eval "cd-$2() { cd \"$PWD\"; }"
 		fi
-	fi
+		;;
+	"unalias")
+                if [[ -z $2 ]]; then
+                        echo "Usage: cd- unalias <alias_name_to_remove>"
+                else
+			_CDD_unalias "$2";
+                fi
+		;;
+	*)				
+		_CDD_listlog;
+		;;
+	esac	
 }
 
 function _CDD_complete_()
@@ -236,7 +254,7 @@ export PROMPT_COMMAND=_CDD_on_prompt;$PROMPT_COMMAND
 cd-() { _CDD_main $@; } # setup cd-
 
 # setup tab completion for commands
-complete -W "clear alias" "cd-"
+complete -W "clear alias unalias" "cd-"
 # setup tab completion that translates cddash tokens on the fly
 complete -D -F _CDD_complete_ -o default
 
