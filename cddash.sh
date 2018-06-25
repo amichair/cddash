@@ -85,7 +85,10 @@ _CDD_unalias() {
                 [[ $1 == ${_CDD_aliases[$i]} ]] && ind=$i
         done
         # remove alias if found
-        [[ ! -z ${ind} ]] && _CDD_aliases=(${_CDD_aliases[@]:0:$ind} ${_CDD_aliases[@]:$(($ind + 2))})
+        if [[ ! -z ${ind} ]]; then
+            _CDD_aliases=(${_CDD_aliases[@]:0:$ind} ${_CDD_aliases[@]:$(($ind + 2))})
+            unset -f "cd-$1"
+        fi
 }
 
 # perform a cd to the cddash token (number or alias)
@@ -244,6 +247,7 @@ _CDD_main() {
 
 function _CDD_complete_()
 {
+    (( COMP_CWORD == -1 )) && return
     local word=${COMP_WORDS[COMP_CWORD]}
 
     if [[ $word =~ cd-.* ]]; then
