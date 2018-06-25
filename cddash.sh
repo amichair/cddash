@@ -1,20 +1,41 @@
 # cddash ver 0.8
 #
-# Maintains a running history of last visited directories and allows quick navigation and in-line completion.
-# Adds the following commands to the shell:
-# cd-    : Shows list of directories seen
+# Cddash maintains a running history of previously visited directories and allows quick navigation and in-line completion.
+#
+### Main Functionality
+# cd-    : Shows list of recently visited directories and their shortcut tokens
 # cd-{K} : cd to Kth last dir (for example cd-3, cd-7 etc)
 #
-# A hotkey is defined (default is F12)
-# Pressing the hotkey when the cursor is immediataly after "cd-" or "cd-{K}" expands the token to the 1st (or Kth) directory in the list. Subsuquent presses iterate forward.
-# 
-# Also defined:
-# cd- clear : clears the log
-# cd- resize {N} : resets the log history to size {N}
-# A reservse-iteration hotkey: Default is Shift+F12
+### Aliases
+# It is possible to give the current directory a static alias with cd- alias <name>.
+# Subsequently, running cd-<name> would change to that directory.
 #
-# To install, add the following line to your .bashrc
-# source cddash.sh
+# An alias can be removed with cd- unalias <name>.
+#
+### In-Place Translation
+# Cddash tokens (numbers or aliases) can be translated in place using a hotkey or tab completion.
+# There are two distinct completions: If the token appears at the beginning of the command line( i.e ">cd-1") it would be expanded with a "cd" prefix (i.e ">cd /path/to/dir").
+# If the token appears at a position other than the beginning, (i.e ">cp foo cd-1) it would be expanded without the "cd" prefix (i.e ">cp foo /path/to/dir")
+#
+# Translation can be done using a hotkey (default F12) immediately after the token. Subsequent presses iterate the directory forward in the list.
+# A reserve-order hotkey is also defined (default shift-F12).
+#
+# Translation can also partially be achieved using tab completion.
+# 
+### Configuation
+# Some aspects of cddash can be configured at the beginning top of this file, after this intro comment.
+# _CDD_LOG_SIZE: The maximal size of the directory history log. History beyond this number is discarded. Default 10
+# _CDD_LISTLOG_COMMAND_COLOR: The color of the token names when listed using cd-.
+# _CDD_HOT_KEY & _CDD_HOT_KEY_REVERSE: Hotkey definitions.
+# REMOVE_DUPLICATES: Flag indicating whether duplicate directories (i.e vising the same directory twice) should appear only once. If true, the older entries are removed from the log.
+#
+### Also defined
+# cd- clear : clears the log
+#
+#
+### Installation
+# Add the following line to your .bashrc
+#  source cddash.sh
 #
 #####################################################
 
@@ -200,7 +221,7 @@ _CDD_main() {
 	"clear")
 		_CDD_initialize
 		;;
-        "alias")
+    "alias")
 		if [[ -z $2 ]]; then
 			echo "Usage: cd- alias <name_for_current_directory>"
 		else
@@ -209,11 +230,11 @@ _CDD_main() {
 		fi
 		;;
 	"unalias")
-                if [[ -z $2 ]]; then
-                        echo "Usage: cd- unalias <alias_name_to_remove>"
-                else
-			_CDD_unalias "$2";
-                fi
+        if [[ -z $2 ]]; then
+            echo "Usage: cd- unalias <alias_name_to_remove>"
+        else
+            _CDD_unalias "$2";
+        fi
 		;;
 	*)				
 		_CDD_listlog;
@@ -255,6 +276,7 @@ cd-() { _CDD_main $@; } # setup cd-
 
 # setup tab completion for commands
 complete -W "clear alias unalias" "cd-"
+
 # setup tab completion that translates cddash tokens on the fly
 complete -D -F _CDD_complete_ -o default
 
